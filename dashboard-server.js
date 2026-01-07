@@ -1,85 +1,135 @@
 const express = require('express');
 const session = require('express-session');
 const axios = require('axios');
+const cors = require('cors');
 const path = require('path');
-const fs = require('fs');
+const crypto = require('crypto');
+const fs = require('fs').promises;
 require('dotenv').config();
 
 const app = express();
 
-// Configuración
+// Configuración de producción
 const {
-    DASHBOARD_PORT = 4000,
+    PORT = 10000,
     MAIN_SERVER_URL = 'https://cofonitabot.onrender.com',
-    DASHBOARD_SESSION_SECRET = process.env.SESSION_SECRET || 'dashboard-secret',
+    FRONTEND_URL = 'https://cofonitabot.netlify.app',
+    SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
     NODE_ENV = 'production'
 } = process.env;
 
+console.log('🚀 Dashboard Server - Configuración:');
+console.log('   Puerto:', PORT);
+console.log('   Backend principal:', MAIN_SERVER_URL);
+console.log('   Frontend:', FRONTEND_URL);
+console.log('   Entorno:', NODE_ENV);
+
 // Middleware
+app.use(cors({
+    origin: [FRONTEND_URL, 'http://localhost:3000', 'http://localhost:5173'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With']
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('.'));
 
 // Configuración de sesión
+const MemoryStore = require('memorystore')(session);
+
 app.use(session({
-    secret: DASHBOARD_SESSION_SECRET,
+    secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
+    store: new MemoryStore({
+        checkPeriod: 86400000 // 24 horas
+    }),
     cookie: {
         secure: NODE_ENV === 'production',
         maxAge: 24 * 60 * 60 * 1000, // 24 horas
         httpOnly: true,
-        sameSite: 'lax'
+        sameSite: NODE_ENV === 'production' ? 'none' : 'lax'
     },
-    name: 'dashboard.sid'
+    name: 'cofonita.dashboard.sid'
 }));
 
-// Middleware de autenticación mejorado
+// Middleware de autenticación
 const checkAuth = async (req, res, next) => {
-    // Si ya hay sesión local
+    console.log('🔍 Verificando autenticación...');
+    
+    // 1. Verificar sesión local
     if (req.session.user) {
+        console.log('✅ Usuario en sesión local:', req.session.user.username);
         return next();
     }
 
     try {
-        // Verificar sesión en el servidor principal
+        console.log('🌐 Consultando backend principal para autenticación...');
+        
+        // 2. Verificar autenticación con backend principal
         const response = await axios.get(`${MAIN_SERVER_URL}/api/user`, {
-            headers: { 
-                Cookie: req.headers.cookie || '',
-                'User-Agent': 'Dashboard-Server'
+            headers: {
+                'Cookie': req.headers.cookie || '',
+                'User-Agent': req.headers['user-agent'] || 'Dashboard-Server',
+                'X-Forwarded-For': req.ip,
+                'Accept': 'application/json'
             },
             withCredentials: true,
-            timeout: 5000
+            timeout: 15000
         });
 
-        if (response.data?.success) {
-            req.session.user = {
-                ...response.data.user,
-                last_login: new Date().toISOString()
-            };
+        if (response.data && response.data.success && response.data.user) {
+            console.log('✅ Autenticado por backend principal:', response.data.user.username);
+            
+            // Guardar usuario en sesión local
+            req.session.user = response.data.user;
             return next();
         }
     } catch (error) {
-        console.log('⚠️  Sesión no válida:', error.message);
+        console.log('⚠️ Error de autenticación:', error.message);
+        if (error.response) {
+            console.log('   Estado:', error.response.status);
+            console.log('   Datos:', error.response.data);
+        }
     }
 
-    // Redirigir al login
-    return res.redirect(`https://cofonitabot.netlify.app/login?redirect=${encodeURIComponent(req.originalUrl)}`);
+    // 3. Redirigir al login
+    console.log('❌ No autenticado, redirigiendo al login...');
+    return res.redirect(`${FRONTEND_URL}/login?error=session_expired&redirect=${encodeURIComponent(req.originalUrl)}`);
 };
 
-// Dashboard HTML - Servir dashboard.html estático
+// Middleware para pasar datos a las vistas
+app.use((req, res, next) => {
+    res.locals.user = req.session.user;
+    res.locals.apiUrl = MAIN_SERVER_URL;
+    res.locals.websiteUrl = FRONTEND_URL;
+    next();
+});
+
+// Servir dashboard.html con datos inyectados
 app.get('/dashboard', checkAuth, async (req, res) => {
     try {
-        // Leer el archivo dashboard.html
-        const dashboardPath = path.join(__dirname, 'dashboard.html');
-        let html = fs.readFileSync(dashboardPath, 'utf8');
-        
         const user = req.session.user;
+        console.log('📊 Sirviendo dashboard para:', user.username);
+        
+        // Leer el archivo HTML
+        const dashboardPath = path.join(__dirname, 'dashboard.html');
+        let html = await fs.readFile(dashboardPath, 'utf8');
+        
+        // Preparar datos del usuario
+        const userData = {
+            id: user.id,
+            username: user.username || 'Usuario',
+            discriminator: user.discriminator || '0000',
+            avatar_url: user.avatar_url || 'https://cdn.discordapp.com/embed/avatars/0.png',
+            guilds: user.guilds || []
+        };
         
         // Función para escapar HTML
         const escapeHtml = (text) => {
             if (!text) return '';
-            return text.toString()
+            return String(text)
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
@@ -87,19 +137,20 @@ app.get('/dashboard', checkAuth, async (req, res) => {
                 .replace(/'/g, '&#039;');
         };
         
-        // Preparar datos del usuario
-        const safeUsername = escapeHtml(user.username || 'Usuario');
-        const safeDiscriminator = escapeHtml(user.discriminator || '0000');
-        const safeAvatar = user.avatar_url || 'https://cdn.discordapp.com/embed/avatars/0.png';
+        // Función para formatear números
+        const formatNumber = (num) => {
+            if (!num) return '0';
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num.toString();
+        };
         
-        // Obtener servidores administrables
-        const manageableServers = user.guilds?.filter(g => g.manageable) || [];
-        const serverCount = manageableServers.length;
-        
-        // Generar HTML de servidores - CORREGIDO: Usar login_url en lugar de invite_url
+        // Generar HTML de servidores
         let serversHTML = '';
-        if (manageableServers.length > 0) {
-            serversHTML = manageableServers.map((guild, index) => {
+        const manageableGuilds = userData.guilds.filter(g => g.manageable);
+        
+        if (manageableGuilds.length > 0) {
+            serversHTML = manageableGuilds.map(guild => {
                 const safeName = escapeHtml(guild.name);
                 const icon = guild.icon 
                     ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=256`
@@ -111,15 +162,19 @@ app.get('/dashboard', checkAuth, async (req, res) => {
                         <div class="server-icon">
                             ${icon 
                                 ? `<img src="${icon}" alt="${safeName}" 
-                                     onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\\'fas fa-server\\'></i>'; this.parentElement.style.background=\\'var(--primary-gradient)\\';" loading="lazy">`
+                                     onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\\'fas fa-server\\'></i>'; this.parentElement.style.background='linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)';" loading="lazy">`
                                 : `<i class="fas fa-server"></i>`}
                         </div>
-                        <div>
+                        <div style="flex: 1; min-width: 0;">
                             <div class="server-name">${safeName}</div>
                             <div class="server-info">
                                 <span class="server-status ${guild.bot_installed ? 'status-online' : 'status-offline'}">
                                     <i class="fas fa-circle"></i>
-                                    ${guild.bot_installed ? 'Bot disponible' : 'Acceso requerido'}
+                                    ${guild.bot_installed ? 'Bot conectado' : 'Conectar bot'}
+                                </span>
+                                <span style="color: var(--text-muted); font-size: 12px;">
+                                    <i class="fas fa-users"></i>
+                                    ${guild.approximate_member_count ? formatNumber(guild.approximate_member_count) : '?'}
                                 </span>
                             </div>
                         </div>
@@ -131,9 +186,12 @@ app.get('/dashboard', checkAuth, async (req, res) => {
                                  <i class="fas fa-cog"></i> Configurar
                                </button>`
                             : `<button class="btn btn-primary connect-btn" data-guild-id="${guild.id}">
-                                 <i class="fas fa-sign-in-alt"></i> Conectar
+                                 <i class="fas fa-plug"></i> Conectar
                                </button>`
                         }
+                        <button class="btn btn-secondary view-btn" data-guild-id="${guild.id}">
+                            <i class="fas fa-eye"></i> Ver
+                        </button>
                     </div>
                 </div>
                 `;
@@ -143,122 +201,149 @@ app.get('/dashboard', checkAuth, async (req, res) => {
                 <div class="no-servers">
                     <i class="fas fa-server fa-3x"></i>
                     <h3>No tienes servidores administrables</h3>
-                    <p>Los servidores donde eres administrador aparecerán aquí</p>
-                    <button class="btn btn-primary" id="refreshServersBtn">
-                        <i class="fas fa-sync-alt"></i> Actualizar Lista
+                    <p>Los servidores donde tengas permisos de administrador aparecerán aquí</p>
+                    <button class="btn btn-primary" onclick="window.location.reload()">
+                        <i class="fas fa-sync-alt"></i> Recargar
                     </button>
                 </div>
             `;
         }
         
-        // Obtener estadísticas del servidor principal
+        // Obtener estadísticas del bot
         let statsData = {
-            totalServers: serverCount,
+            totalServers: 0,
             totalUsers: 0,
             commandsUsed: 0,
             uptime: 99.8
         };
         
         try {
+            console.log('📈 Obteniendo estadísticas del bot...');
             const statsResponse = await axios.get(`${MAIN_SERVER_URL}/api/bot/stats`, {
-                headers: { 
-                    Cookie: req.headers.cookie || '',
+                headers: {
+                    'Cookie': req.headers.cookie || '',
                     'User-Agent': 'Dashboard-Server'
                 },
                 withCredentials: true,
-                timeout: 3000
+                timeout: 10000
             });
             
-            if (statsResponse.data?.success) {
-                statsData = { ...statsData, ...statsResponse.data.stats };
+            if (statsResponse.data && statsResponse.data.success) {
+                statsData = statsResponse.data.stats;
+                console.log('✅ Estadísticas obtenidas');
             }
         } catch (error) {
-            console.log('⚠️  Usando estadísticas básicas:', error.message);
+            console.log('⚠️ Error obteniendo estadísticas:', error.message);
+            // Usar datos por defecto
+            statsData.totalServers = manageableGuilds.length;
         }
         
-        // Reemplazar variables en el HTML
+        // Preparar reemplazos
         const replacements = {
-            '\\${username}': safeUsername,
-            '\\${discriminator}': safeDiscriminator,
-            '\\${avatarUrl}': safeAvatar,
-            '\\${serverCount}': serverCount,
-            '\\${serversHTML}': serversHTML,
-            '\\${totalServers}': statsData.totalServers,
-            '\\${totalUsers}': statsData.totalUsers > 1000 
-                ? Math.round(statsData.totalUsers / 1000) + 'K' 
-                : statsData.totalUsers,
-            '\\${commandsUsed}': statsData.commandsUsed > 1000 
-                ? Math.round(statsData.commandsUsed / 1000) + 'K' 
-                : statsData.commandsUsed,
-            '\\${uptime}': statsData.uptime
+            '{{USERNAME}}': escapeHtml(userData.username),
+            '{{DISCRIMINATOR}}': escapeHtml(userData.discriminator),
+            '{{AVATAR_URL}}': userData.avatar_url,
+            '{{SERVER_COUNT}}': manageableGuilds.length,
+            '{{SERVERS_HTML}}': serversHTML,
+            '{{TOTAL_SERVERS}}': formatNumber(statsData.totalServers || manageableGuilds.length),
+            '{{TOTAL_USERS}}': formatNumber(statsData.totalUsers || 0),
+            '{{COMMANDS_USED}}': formatNumber(statsData.commandsUsed || 0),
+            '{{UPTIME}}': statsData.uptime ? statsData.uptime.toFixed(1) : '99.8',
+            '{{API_URL}}': MAIN_SERVER_URL,
+            '{{WEBSITE_URL}}': FRONTEND_URL,
+            '{{SERVERS_PLURAL}}': manageableGuilds.length !== 1 ? 'es' : '',
+            '{{ADMIN_PLURAL}}': manageableGuilds.length !== 1 ? 's' : ''
         };
         
-        Object.entries(replacements).forEach(([key, value]) => {
-            html = html.replace(new RegExp(key, 'g'), value);
+        // Reemplazar todas las variables
+        Object.keys(replacements).forEach(key => {
+            const regex = new RegExp(key, 'g');
+            html = html.replace(regex, replacements[key]);
         });
         
+        // Enviar HTML procesado
+        res.setHeader('Content-Type', 'text/html');
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.send(html);
+        
+        console.log('✅ Dashboard servido exitosamente');
+        
     } catch (error) {
-        console.error('❌ Error cargando dashboard:', error);
+        console.error('❌ Error crítico al servir dashboard:', error);
         res.status(500).send(`
             <!DOCTYPE html>
             <html>
             <head>
-                <title>Error - Dashboard</title>
+                <title>Error - Dashboard Cofonita</title>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
                 <style>
-                    body { 
-                        font-family: 'Inter', sans-serif;
-                        background: #0F172A;
-                        color: #F8FAFC;
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    body {
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                        background: linear-gradient(135deg, #0A0A14 0%, #121220 100%);
+                        color: white;
+                        min-height: 100vh;
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        min-height: 100vh;
-                        margin: 0;
                         padding: 20px;
                     }
-                    .error-container {
-                        text-align: center;
-                        max-width: 500px;
-                        padding: 40px;
-                        background: rgba(30, 41, 59, 0.8);
+                    .error-box {
+                        background: rgba(255, 255, 255, 0.1);
                         backdrop-filter: blur(20px);
-                        border-radius: 16px;
-                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        border-radius: 20px;
+                        padding: 40px;
+                        max-width: 500px;
+                        text-align: center;
+                        border: 1px solid rgba(255, 255, 255, 0.2);
+                        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
                     }
                     .error-icon {
-                        font-size: 64px;
-                        color: #EF4444;
+                        font-size: 80px;
+                        background: linear-gradient(135deg, #FF6B8B 0%, #5A67D8 100%);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
                         margin-bottom: 20px;
                     }
-                    h1 { font-size: 32px; margin-bottom: 15px; }
-                    p { color: #94A3B8; margin-bottom: 25px; }
+                    h1 { font-size: 24px; margin-bottom: 10px; }
+                    p { color: #A0A0C0; margin-bottom: 30px; line-height: 1.6; }
                     .btn {
                         display: inline-flex;
                         align-items: center;
                         gap: 10px;
-                        background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+                        background: linear-gradient(135deg, #FF6B8B 0%, #5A67D8 100%);
                         color: white;
-                        padding: 14px 28px;
-                        border-radius: 12px;
+                        padding: 12px 24px;
+                        border-radius: 10px;
                         text-decoration: none;
                         font-weight: 600;
+                        border: none;
+                        cursor: pointer;
+                        transition: transform 0.2s;
+                        margin: 5px;
+                    }
+                    .btn:hover { transform: translateY(-2px); }
+                    .btn-secondary {
+                        background: rgba(255, 255, 255, 0.1);
                     }
                 </style>
             </head>
             <body>
-                <div class="error-container">
+                <div class="error-box">
                     <div class="error-icon">
                         <i class="fas fa-exclamation-triangle"></i>
                     </div>
-                    <h1>Error del Dashboard</h1>
-                    <p>No se pudo cargar el panel de control.</p>
-                    <a href="https://cofonitabot.netlify.app/dashboard" class="btn">
-                        <i class="fas fa-redo"></i> Reintentar
-                    </a>
-                    <a href="https://cofonitabot.netlify.app/login" class="btn" style="margin-left: 10px;">
-                        <i class="fas fa-sign-in-alt"></i> Volver a Login
-                    </a>
+                    <h1>Error al cargar el Dashboard</h1>
+                    <p>Hubo un problema al cargar tu panel de control. Esto puede deberse a problemas de conexión o sesión expirada.</p>
+                    <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
+                        <button class="btn" onclick="window.location.reload()">
+                            <i class="fas fa-redo"></i> Reintentar
+                        </button>
+                        <button class="btn btn-secondary" onclick="window.location.href='${FRONTEND_URL}/login'">
+                            <i class="fas fa-sign-in-alt"></i> Volver al Login
+                        </button>
+                    </div>
                 </div>
             </body>
             </html>
@@ -266,114 +351,103 @@ app.get('/dashboard', checkAuth, async (req, res) => {
     }
 });
 
-// API para conectar servidor (nueva)
+// API endpoints (proxy al backend principal)
+app.get('/api/user', checkAuth, (req, res) => {
+    res.json({
+        success: true,
+        user: req.session.user
+    });
+});
+
+app.get('/api/bot/stats', checkAuth, async (req, res) => {
+    try {
+        const response = await axios.get(`${MAIN_SERVER_URL}/api/bot/stats`, {
+            headers: {
+                'Cookie': req.headers.cookie || '',
+                'User-Agent': 'Dashboard-Server'
+            },
+            withCredentials: true,
+            timeout: 10000
+        });
+        
+        res.json(response.data);
+    } catch (error) {
+        console.error('Error obteniendo estadísticas:', error.message);
+        res.json({
+            success: true,
+            stats: {
+                totalServers: req.session.user.guilds?.filter(g => g.manageable).length || 0,
+                totalUsers: 0,
+                commandsUsed: 0,
+                uptime: 99.8
+            }
+        });
+    }
+});
+
 app.post('/api/guild/:guildId/connect', checkAuth, async (req, res) => {
     try {
         const { guildId } = req.params;
         const user = req.session.user;
         
-        const userGuild = user.guilds?.find(g => g.id === guildId);
-        
-        if (!userGuild || !userGuild.manageable) {
-            return res.status(403).json({ 
-                success: false, 
-                error: 'No tienes permisos en este servidor' 
+        // Verificar permisos
+        const userGuild = user.guilds?.find(g => g.id === guildId && g.manageable);
+        if (!userGuild) {
+            return res.status(403).json({
+                success: false,
+                error: 'No tienes permisos para administrar este servidor'
             });
         }
-
-        // Obtener enlace de login del servidor principal
-        const response = await axios.get(`${MAIN_SERVER_URL}/api/login/${guildId}`, {
-            headers: { 
-                Cookie: req.headers.cookie || '',
+        
+        // Proxy al backend principal
+        const response = await axios.post(`${MAIN_SERVER_URL}/api/guild/${guildId}/connect`, {}, {
+            headers: {
+                'Cookie': req.headers.cookie || '',
                 'User-Agent': 'Dashboard-Server'
             },
             withCredentials: true,
-            timeout: 5000
+            timeout: 10000
         });
-
-        if (response.data.success) {
-            res.json({
-                success: true,
-                login_url: response.data.login_url
-            });
-        } else {
-            res.status(500).json({
-                success: false,
-                error: 'Error obteniendo enlace de conexión'
-            });
-        }
-    } catch (error) {
-        console.error('❌ Error conectando servidor:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Error al conectar servidor' 
-        });
-    }
-});
-
-// API para datos enriquecidos
-app.get('/api/dashboard/enhanced', checkAuth, (req, res) => {
-    try {
-        const user = req.session.user;
         
-        const enhancedData = {
-            success: true,
-            user: {
-                ...user,
-                enhanced: {
-                    join_date: new Date().toISOString(),
-                    activity_score: 0,
-                    server_rank: 0,
-                    badges: []
-                }
-            },
-            stats: {
-                enhanced: {
-                    daily_growth: 0,
-                    peak_hours: [],
-                    popular_commands: [],
-                    response_time: 0
-                }
-            },
-            analytics: {
-                realtime: {
-                    active_users: 0,
-                    commands_per_minute: 0,
-                    server_load: 0
-                }
-            }
-        };
-        
-        res.json(enhancedData);
+        res.json(response.data);
     } catch (error) {
-        console.error('❌ Error en API mejorada:', error);
+        console.error('Error conectando servidor:', error.message);
         res.status(500).json({
             success: false,
-            error: 'Error interno'
+            error: 'Error al conectar el bot al servidor'
         });
     }
 });
 
 // Health check
 app.get('/health', (req, res) => {
-    const health = {
+    res.json({
         status: 'healthy',
         service: 'cofonita-dashboard',
-        version: '2.0.0',
         timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        authenticated: !!req.session.user
-    };
-    
-    res.json(health);
+        environment: NODE_ENV,
+        authenticated: !!req.session.user,
+        urls: {
+            main_server: MAIN_SERVER_URL,
+            frontend: FRONTEND_URL
+        }
+    });
 });
 
 // Logout
 app.get('/logout', (req, res) => {
-    req.session.destroy((err) => {
-        if (err) console.error('Error al destruir sesión:', err);
-        res.redirect('https://cofonitabot.onrender.com/logout');
+    req.session.destroy(() => {
+        res.redirect(`${MAIN_SERVER_URL}/logout`);
     });
+});
+
+// Ruta raíz - redirige al dashboard
+app.get('/', (req, res) => {
+    if (req.session.user) {
+        res.redirect('/dashboard');
+    } else {
+        res.redirect(`${FRONTEND_URL}/login`);
+    }
 });
 
 // 404 handler
@@ -383,82 +457,91 @@ app.use((req, res) => {
         <html>
         <head>
             <title>404 - No encontrado</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
             <style>
-                body { 
-                    font-family: 'Inter', sans-serif;
-                    background: #0F172A;
-                    color: #F8FAFC;
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    background: linear-gradient(135deg, #0A0A14 0%, #121220 100%);
+                    color: white;
+                    min-height: 100vh;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    min-height: 100vh;
-                    margin: 0;
                     padding: 20px;
                     text-align: center;
                 }
                 .container {
                     max-width: 600px;
-                    padding: 40px;
-                    background: rgba(30, 41, 59, 0.8);
-                    backdrop-filter: blur(20px);
-                    border-radius: 16px;
-                    border: 1px solid rgba(255, 255, 255, 0.1);
                 }
                 h1 { 
-                    font-size: 120px;
-                    margin: 0;
-                    background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+                    font-size: 120px; 
+                    margin: 0; 
+                    background: linear-gradient(135deg, #FF6B8B 0%, #5A67D8 100%);
                     -webkit-background-clip: text;
                     -webkit-text-fill-color: transparent;
                 }
-                h2 { font-size: 32px; margin: 20px 0; }
-                p { color: #94A3B8; margin-bottom: 30px; }
+                h2 { font-size: 28px; margin: 20px 0; }
+                p { color: #A0A0C0; margin-bottom: 30px; line-height: 1.6; }
                 .btn {
                     display: inline-flex;
                     align-items: center;
                     gap: 10px;
-                    background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+                    background: linear-gradient(135deg, #FF6B8B 0%, #5A67D8 100%);
                     color: white;
-                    padding: 14px 28px;
-                    border-radius: 12px;
+                    padding: 12px 24px;
+                    border-radius: 10px;
                     text-decoration: none;
                     font-weight: 600;
+                    border: none;
+                    cursor: pointer;
+                    transition: transform 0.2s;
                 }
+                .btn:hover { transform: translateY(-2px); }
             </style>
         </head>
         <body>
             <div class="container">
                 <h1>404</h1>
                 <h2>Página no encontrada</h2>
-                <p>La página que estás buscando no existe en el dashboard.</p>
-                <a href="/dashboard" class="btn">
-                    <i class="fas fa-tachometer-alt"></i> Volver al Dashboard
-                </a>
+                <p>La página que buscas no existe en el dashboard de Cofonita.</p>
+                <button class="btn" onclick="window.location.href='/dashboard'">
+                    <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                </button>
             </div>
         </body>
         </html>
     `);
 });
 
-// Iniciar servidor
-const server = app.listen(DASHBOARD_PORT, () => {
-    console.log('\n' + '='.repeat(50));
-    console.log('📊 Dashboard Cofonita');
-    console.log('='.repeat(50));
-    console.log(`✅ Servidor corriendo en: http://localhost:${DASHBOARD_PORT}`);
-    console.log(`🔗 Dashboard: http://localhost:${DASHBOARD_PORT}/dashboard`);
-    console.log(`🔐 Servidor principal: ${MAIN_SERVER_URL}`);
-    console.log(`🏥 Health check: http://localhost:${DASHBOARD_PORT}/health`);
-    console.log('='.repeat(50) + '\n');
+// Error handler global
+app.use((err, req, res, next) => {
+    console.error('🔥 Error global:', err);
+    res.status(500).json({
+        success: false,
+        error: 'Error interno del servidor',
+        message: 'Por favor, intenta más tarde o contacta con soporte.'
+    });
 });
 
-// Manejo de cierre
-process.on('SIGTERM', () => {
-    console.log('🔄 Cerrando servidor dashboard...');
-    server.close(() => {
-        console.log('✅ Servidor dashboard cerrado');
-        process.exit(0);
-    });
+// Iniciar servidor
+app.listen(PORT, '0.0.0.0', () => {
+    console.log('\n' + '='.repeat(60));
+    console.log('🚀 DASHBOARD COFONITA - PRODUCCIÓN');
+    console.log('='.repeat(60));
+    console.log(`✅ Servidor corriendo en puerto: ${PORT}`);
+    console.log(`📊 Dashboard: https://cofonitabot.onrender.com/dashboard`);
+    console.log(`🔗 Frontend: ${FRONTEND_URL}`);
+    console.log(`🔧 Backend principal: ${MAIN_SERVER_URL}`);
+    console.log(`🔐 Entorno: ${NODE_ENV}`);
+    console.log('='.repeat(60));
+    console.log('💡 URLs importantes:');
+    console.log(`   • Login: ${FRONTEND_URL}/login`);
+    console.log(`   • Dashboard: https://cofonitabot.onrender.com/dashboard`);
+    console.log(`   • Health check: https://cofonitabot.onrender.com/health`);
+    console.log(`   • API User: https://cofonitabot.onrender.com/api/user`);
+    console.log('='.repeat(60) + '\n');
 });
 
 module.exports = app;
