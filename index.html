@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="es" class="dark-theme">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cofonita AI - Panel de Control para Discord</title>
+    <meta name="description" content="Panel de administración para Cofonita. Gestiona tu comunidad de Discord desde un solo lugar sin necesidad de invitar un bot.">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF6B8B;
+            --primary-dark: #FF4D6D;
+            --primary-light: #FF8FA3;
+            --secondary: #5A67D8;
+            --accent: #00D4AA;
+            --bg-dark: #0A0A14;
+            --bg-card: #121220;
+            --bg-card-hover: #1A1A2E;
+            --text-light: #FFFFFF;
+            --text-muted: #A0A0C0;
+            --success: #00E5A0;
+            --warning: #FFB74D;
+            --danger: #FF5252;
+            --glass: rgba(255, 255, 255, 0.05);
+            --transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            --radius-xl: 32px;
+            --shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            --shadow-hover: 0 30px 60px rgba(0, 0, 0, 0.4);
+            --glow: 0 0 20px rgba(255, 107, 139, 0.3);
+        }
+
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box;
+        }
+        
+        html { 
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+            overflow-x: hidden;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(90, 103, 216, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(255, 107, 139, 0.1) 0%, transparent 20%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        section {
+            padding: 100px 0;
+        }
+
+        /* Header con estilo del dashboard */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            background: rgba(18, 18, 32, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: var(--transition);
+        }
+
+        .header.scrolled {
+            padding: 15px 0;
+            box-shadow: var(--shadow);
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+        }
+
+        /* Logo con estilo del dashboard */
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-decoration: none;
+            font-weight: 900;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 28px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: float 6s ease-in-out infinite;
+            overflow: hidden;
+        }
+
+        .logo-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        /* Navegación estilo dashboard */
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-muted);
+            text-decoration: none;
+            padding: 12px 20px;
+            border-radius: var(--radius-md);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid transparent;
+        }
+
+        .nav-link:hover {
+            background: var(--glass);
+            color: var(--text-light);
+            border-color: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+
+        .nav-link i {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+
+        /* Botones estilo dashboard */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 28px;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            text-decoration: none;
+            transition: var(--transition);
+            cursor: pointer;
+            border: none;
+            outline: none;
+            font-size: 14px;
+            white-space: nowrap;
+            position: relative;
+            overflow: hidden;
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: 0.5px;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-light);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+        }
+
+        /* Hero Section estilo dashboard */
+        .hero {
+            padding: 180px 0 120px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 1000px;
+            height: 1000px;
+            background: radial-gradient(circle, rgba(255, 107, 139, 0.1) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            z-index: -1;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 107, 139, 0.15);
+            color: var(--primary-light);
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 107, 139, 0.3);
+        }
+
+        .hero-title {
+            font-size: 56px;
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(135deg, var(--text-light) 0%, var(--primary-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: 18px;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            line-height: 1.8;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 60px;
+        }
+
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: 900;
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(135deg, var(--text-light) 0%, var(--text-muted) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        /* Secciones estilo dashboard */
+        .section-title {
+            text-align: center;
+            font-size: 40px;
+            font-weight: 900;
+            margin-bottom: 60px;
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(135deg, var(--text-light) 0%, var(--primary-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            border-radius: 2px;
+        }
+
+        /* Features Grid estilo dashboard */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: var(--radius-lg);
+            transition: var(--transition);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-hover);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 25px;
+            color: white;
+            font-size: 28px;
+            box-shadow: var(--glow);
+        }
+
+        .feature-title {
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 15px;
+            color: var(--text-light);
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .feature-desc {
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        /* Steps estilo dashboard */
+        .steps {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 60px;
+            position: relative;
+        }
+
+        .step {
+            text-align: center;
+            max-width: 250px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-number {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 900;
+            margin: 0 auto 20px;
+            font-family: 'Space Grotesk', sans-serif;
+            color: white;
+            box-shadow: var(--glow);
+        }
+
+        .step-title {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            color: var(--text-light);
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .step-desc {
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* Testimonials estilo dashboard */
+        .testimonials {
+            background: var(--bg-card);
+            border-radius: var(--radius-xl);
+            padding: 60px;
+            margin-top: 80px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .testimonials::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+        }
+
+        .testimonial-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .testimonial-card {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 30px;
+            border-radius: var(--radius-lg);
+            border-left: 4px solid var(--primary);
+            transition: var(--transition);
+        }
+
+        .testimonial-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow);
+        }
+
+        .testimonial-text {
+            color: var(--text-muted);
+            font-style: italic;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .author-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .author-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .author-avatar .fallback {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .author-info h4 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: var(--text-light);
+        }
+
+        .author-info p {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* CTA estilo dashboard */
+        .cta {
+            background: linear-gradient(135deg, rgba(255, 107, 139, 0.1) 0%, rgba(90, 103, 216, 0.1) 100%);
+            border-radius: var(--radius-xl);
+            padding: 80px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .cta::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 30% 20%, rgba(255, 107, 139, 0.2) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .cta-title {
+            font-size: 36px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            font-family: 'Space Grotesk', sans-serif;
+            color: var(--text-light);
+        }
+
+        .cta-subtitle {
+            color: var(--text-muted);
+            font-size: 18px;
+            margin-bottom: 40px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Footer estilo dashboard */
+        .footer {
+            background: rgba(10, 10, 20, 0.95);
+            padding: 80px 0 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 24px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .footer-desc {
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .footer-title {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            color: var(--text-light);
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 10px;
+        }
+
+        .footer-links a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: var(--transition);
+            padding: 8px 0;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary-light);
+            transform: translateX(5px);
+        }
+
+        .social-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .social-link {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--glass);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: var(--transition);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .social-link:hover {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            transform: translateY(-5px) scale(1.1);
+            box-shadow: var(--glow);
+        }
+
+        .copyright {
+            text-align: center;
+            padding-top: 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* Animaciones fade-in */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        /* Mobile menu */
+        .mobile-menu-btn {
+            display: none;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .mobile-menu-btn:hover {
+            transform: rotate(90deg);
+        }
+
+        /* Scrollbar estilo dashboard */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(to bottom, var(--primary), var(--secondary));
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(to bottom, var(--primary-dark), var(--secondary));
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .hero-title {
+                font-size: 48px;
+            }
+            
+            .section-title {
+                font-size: 36px;
+            }
+            
+            .cta {
+                padding: 60px 40px;
+            }
+            
+            .steps {
+                flex-direction: column;
+                align-items: center;
+                gap: 40px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+                position: fixed;
+                top: 80px;
+                left: 0;
+                right: 0;
+                background: rgba(18, 18, 32, 0.98);
+                backdrop-filter: blur(20px);
+                padding: 20px;
+                flex-direction: column;
+                gap: 15px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                z-index: 999;
+            }
+            
+            .nav-links.active {
+                display: flex;
+            }
+            
+            .mobile-menu-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .hero-title {
+                font-size: 36px;
+            }
+            
+            .hero-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+            
+            .hero-stats {
+                gap: 20px;
+            }
+            
+            .stat-number {
+                font-size: 28px;
+            }
+            
+            .testimonials {
+                padding: 40px 20px;
+            }
+            
+            .cta {
+                padding: 40px 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero {
+                padding: 140px 0 80px;
+            }
+            
+            .section-title {
+                font-size: 28px;
+            }
+            
+            .feature-card,
+            .testimonial-card {
+                padding: 25px;
+            }
+            
+            .cta-title {
+                font-size: 28px;
+            }
+            
+            .footer-grid {
+                gap: 30px;
+            }
+        }
+
+        /* Sistema de Easter Egg (oculto) */
+        .easter-egg-trigger {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            opacity: 0.1;
+            z-index: 9998;
+            transition: opacity 0.3s;
+        }
+
+        .easter-egg-trigger:hover {
+            opacity: 0.3;
+        }
+
+        .secret-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+        }
+
+        .secret-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .secret-container {
+            background: var(--bg-card);
+            padding: 50px;
+            border-radius: var(--radius-xl);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: var(--shadow-hover);
+            transform: scale(0.9);
+            transition: transform 0.6s ease;
+        }
+
+        .secret-overlay.active .secret-container {
+            transform: scale(1);
+        }
+
+        .secret-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            font-size: 40px;
+            color: white;
+            box-shadow: var(--glow);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .secret-title {
+            font-size: 32px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .secret-message {
+            color: var(--text-muted);
+            font-size: 18px;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .secret-input {
+            width: 100%;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-md);
+            color: var(--text-light);
+            font-size: 18px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: var(--transition);
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .secret-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: var(--glow);
+        }
+
+        .secret-btn {
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: 1px;
+        }
+
+        .secret-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow);
+        }
+
+        .secret-success {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .secret-success .secret-icon {
+            background: linear-gradient(135deg, var(--success) 0%, var(--accent) 100%);
+        }
+
+        .secret-countdown {
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--accent);
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        /* Particle background (opcional) */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--primary-light);
+            border-radius: 50%;
+            animation: floatParticle 20s infinite linear;
+        }
+
+        @keyframes floatParticle {
+            0% {
+                transform: translateY(100vh) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) translateX(100px);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Easter Egg (oculto) -->
+    <button class="easter-egg-trigger" id="easterEggTrigger" title="Easter Egg"></button>
+    
+    <div class="secret-overlay" id="secretOverlay">
+        <div class="secret-container">
+            <div id="secretForm">
+                <div class="secret-icon">
+                    <i class="fas fa-key"></i>
+                </div>
+                <h2 class="secret-title">Easter Egg Secreto</h2>
+                <p class="secret-message">
+                    ¡Encontraste el easter egg! Para acceder a contenido especial, escribe la frase secreta:
+                </p>
+                <input type="text" class="secret-input" id="secretInput" placeholder="¿Cuál es la frase secreta?" autocomplete="off">
+                <button class="secret-btn" onclick="checkEasterEgg()">
+                    <i class="fas fa-check"></i> Verificar
+                </button>
+                <p style="color: var(--text-muted); margin-top: 20px; font-size: 14px; opacity: 0.7;">
+                    (Pista: tiene que ver con Salvox)
+                </p>
+            </div>
+            <div class="secret-success" id="secretSuccess">
+                <div class="secret-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h2 class="secret-title">¡Easter Egg Activado!</h2>
+                <p class="secret-message">
+                    ¡Correcto! Redirigiendo a contenido especial...
+                </p>
+                <div class="secret-countdown" id="secretCountdown">3</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Particle Background -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Header -->
+    <header class="header" id="header">
+        <div class="container">
+            <nav class="nav-container">
+                <a href="#" class="logo">
+                    <div class="logo-icon" id="logoContainer">
+                        <!-- Logo cargado dinámicamente desde assets -->
+                    </div>
+                    Cofonita
+                </a>
+                
+                <div class="nav-links" id="navLinks">
+                    <a href="#features" class="nav-link">
+                        <i class="fas fa-star"></i>
+                        <span>Características</span>
+                    </a>
+                    <a href="#how-it-works" class="nav-link">
+                        <i class="fas fa-play-circle"></i>
+                        <span>Cómo funciona</span>
+                    </a>
+                    <a href="#testimonials" class="nav-link">
+                        <i class="fas fa-comment"></i>
+                        <span>Testimonios</span>
+                    </a>
+                    <a href="https://cofonitabot.netlify.app/login" class="nav-link">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Panel de Control</span>
+                    </a>
+                    <a href="https://cofonitabot.netlify.app/login" class="btn btn-primary">
+                        <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                    </a>
+                </div>
+                
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content fade-in">
+                <div class="hero-badge">
+                    <i class="fas fa-star"></i>
+                    <span>Panel de Control Inteligente</span>
+                </div>
+                
+                <h1 class="hero-title">
+                    Gestiona tu Comunidad Discord desde un Solo Lugar
+                </h1>
+                
+                <p class="hero-subtitle">
+                    Cofonita te ofrece un panel de control completo para administrar tu servidor Discord. Sin necesidad de invitar bots, solo inicia sesión y gestiona todo desde aquí.
+                </p>
+                
+                <div class="hero-actions">
+                    <a href="https://cofonitabot.netlify.app/login" class="btn btn-primary">
+                        <i class="fas fa-sign-in-alt"></i> Acceder al Panel
+                    </a>
+                    <a href="#features" class="btn btn-secondary">
+                        <i class="fas fa-play-circle"></i> Ver Características
+                    </a>
+                </div>
+                
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="statServers">1250</div>
+                        <div class="stat-label">Servidores Activos</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">99.9%</div>
+                        <div class="stat-label">Disponibilidad</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">100%</div>
+                        <div class="stat-label">Sin Instalación</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">24/7</div>
+                        <div class="stat-label">Acceso</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="container">
+        <h2 class="section-title fade-in">¿Qué Puedes Hacer?</h2>
+        
+        <div class="features-grid">
+            <div class="feature-card fade-in">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3 class="feature-title">Analíticas en Tiempo Real</h3>
+                <p class="feature-desc">
+                    Monitorea el crecimiento de tu servidor, actividad de usuarios y métricas importantes para tomar decisiones informadas.
+                </p>
+            </div>
+            
+            <div class="feature-card fade-in">
+                <div class="feature-icon">
+                    <i class="fas fa-users-cog"></i>
+                </div>
+                <h3 class="feature-title">Gestión de Miembros</h3>
+                <p class="feature-desc">
+                    Administra roles, permisos y miembros de tu servidor desde una interfaz intuitiva y fácil de usar.
+                </p>
+            </div>
+            
+            <div class="feature-card fade-in">
+                <div class="feature-icon">
+                    <i class="fas fa-cogs"></i>
+                </div>
+                <h3 class="feature-title">Configuración Centralizada</h3>
+                <p class="feature-desc">
+                    Configura todos los aspectos de tu servidor desde un solo lugar sin necesidad de múltiples bots o herramientas.
+                </p>
+            </div>
+            
+            <div class="feature-card fade-in">
+                <div class="feature-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3 class="feature-title">Moderación Avanzada</h3>
+                <p class="feature-desc">
+                    Herramientas de moderación completas para mantener tu comunidad segura y libre de contenido inapropiado.
+                </p>
+            </div>
+            
+            <div class="feature-card fade-in">
+                <div class="feature-icon">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <h3 class="feature-title">Notificaciones Personalizadas</h3>
+                <p class="feature-desc">
+                    Configura alertas y notificaciones para eventos importantes en tu servidor.
+                </p>
+            </div>
+            
+            <div class="feature-card fade-in">
+                <div class="feature-icon">
+                    <i class="fas fa-database"></i>
+                </div>
+                <h3 class="feature-title">Backup Automático</h3>
+                <p class="feature-desc">
+                    Tus configuraciones se guardan automáticamente y puedes restaurarlas en cualquier momento.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how-it-works" class="container">
+        <h2 class="section-title fade-in">Cómo Comenzar</h2>
+        
+        <div class="steps">
+            <div class="step fade-in">
+                <div class="step-number">1</div>
+                <h3 class="step-title">Inicia Sesión</h3>
+                <p class="step-desc">
+                    Conéctate con tu cuenta de Discord para acceder al panel de control.
+                </p>
+            </div>
+            
+            <div class="step fade-in">
+                <div class="step-number">2</div>
+                <h3 class="step-title">Selecciona tu Servidor</h3>
+                <p class="step-desc">
+                    Elige el servidor de Discord que deseas administrar desde la lista.
+                </p>
+            </div>
+            
+            <div class="step fade-in">
+                <div class="step-number">3</div>
+                <h3 class="step-title">Gestiona Todo</h3>
+                <p class="step-desc">
+                    Usa las herramientas del panel para configurar y monitorear tu comunidad.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section id="testimonials" class="container">
+        <h2 class="section-title fade-in">Lo que Dicen Nuestros Usuarios</h2>
+        
+        <div class="testimonials fade-in">
+            <div class="testimonial-grid">
+                <div class="testimonial-card">
+                    <p class="testimonial-text">
+                        "Es un bot sólido y sumamente funcional. Aunque se encuentra en constante evolución, su utilidad en el día a día es indiscutible y los resultados que ofrece merecen totalmente la pena."
+                    </p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar" id="quietAvatar">
+                            <!-- Avatar de QuietToyFoxy cargado dinámicamente -->
+                        </div>
+                        <div class="author-info">
+                            <h4>QuietToyFoxy</h4>
+                            <p>Manager General</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="testimonial-card">
+                    <p class="testimonial-text">
+                        "Destaco la gran variedad de sistemas que integra. Permite gestionar desde tickets de soporte y mensajes de bienvenida hasta recordatorios por mensajes directos, lo que lo hace una herramienta indispensable para estudios y comunidades organizadas"
+                    </p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar" id="serdemoniacoAvatar">
+                            <!-- Avatar de serdemoniaco cargado dinámicamente -->
+                        </div>
+                        <div class="author-info">
+                            <h4>Lobo</h4>
+                            <p>Dueño de Cofona</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="testimonial-card">
+                    <p class="testimonial-text">
+                        "Las analíticas en tiempo real me han ayudado a entender mejor a mi comunidad y tomar mejores decisiones."
+                    </p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar" id="notspainAvatar">
+                            <!-- Avatar de NotSpain cargado dinámicamente -->
+                        </div>
+                        <div class="author-info">
+                            <h4>NotSpain</h4>
+                            <p>Colaborador de Salvox y mejor dev que el</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta container fade-in">
+        <h2 class="cta-title">Cofonita te ayuda a gestionar Cofona Studios</h2>
+        <p class="cta-subtitle">
+            Unete a Cofona Studios para participar en eventos de Minecraft, conocer gente y jugar juegos con Cofonita
+        </p>
+        <a href="https://cofonitabot.netlify.app/login" class="btn btn-primary" style="padding: 16px 40px; font-size: 18px;">
+            <i class="fas fa-sign-in-alt"></i> Acceder al Panel de Control
+        </a>
+        <p style="color: var(--text-muted); margin-top: 20px; font-size: 14px;">
+            Gratis • Sin límites • Sin necesidad de poner tu seguridad en riesgo
+        </p>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div>
+                    <div class="footer-logo">
+                        <div class="logo-icon" style="width: 40px; height: 40px; font-size: 18px;" id="footerLogo">
+                            <!-- Logo del footer cargado dinámicamente -->
+                        </div>
+                        Cofonita V4
+                    </div>
+                    <p class="footer-desc">
+                        Si formas parte del staff de Cofona Studios puedes configurarlo a tu medida para favorecer a los usuarios
+                    </p>
+                    <div class="social-links">
+                        <a href="#" class="social-link">
+                            <i class="fab fa-discord"></i>
+                        </a>
+                        <a href="#" class="social-link">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="social-link">
+                            <i class="fab fa-github"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="footer-title">Panel de Control</h3>
+                    <ul class="footer-links">
+                        <li><a href="https://cofonitabot.netlify.app/login"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</a></li>
+                        <li><a href="#features"><i class="fas fa-star"></i> Características</a></li>
+                        <li><a href="#how-it-works"><i class="fas fa-play-circle"></i> Cómo funciona</a></li>
+                        <li><a href="#testimonials"><i class="fas fa-comment"></i> Testimonios</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="footer-title">Recursos</h3>
+                    <ul class="footer-links">
+                        <li><a href="#"><i class="fas fa-book"></i> Documentación</a></li>
+                        <li><a href="#"><i class="fas fa-graduation-cap"></i> Guías</a></li>
+                        <li><a href="#"><i class="fas fa-question-circle"></i> FAQ</a></li>
+                        <li><a href="#"><i class="fas fa-headset"></i> Soporte</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="footer-title">Legal</h3>
+                    <ul class="footer-links">
+                        <li><a href="#"><i class="fas fa-file-contract"></i> Términos</a></li>
+                        <li><a href="#"><i class="fas fa-shield-alt"></i> Privacidad</a></li>
+                        <li><a href="#"><i class="fas fa-cookie"></i> Cookies</a></li>
+                        <li><a href="#"><i class="fas fa-envelope"></i> Contacto</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="copyright">
+                <p>&copy; 2026® Cofonita V4. Todos los derechos reservados.</p>
+                <p style="margin-top: 10px; font-size: 12px;">Discord es una marca registrada de Discord Inc. Este servicio no está afiliado con Discord Inc.</p>
+            </div>
+
+            <div class="copyright">
+                <p>&copy; 2026® Salvox Studios no se hace responsable de los daños provocados por los errores de los usuarios.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Sistema de Easter Egg (opcional)
+        const secretPhrase = "salvox es epico";
+        
+        function showEasterEgg() {
+            const overlay = document.getElementById('secretOverlay');
+            overlay.classList.add('active');
+            document.getElementById('secretInput').focus();
+        }
+
+        function hideEasterEgg() {
+            const overlay = document.getElementById('secretOverlay');
+            overlay.classList.remove('active');
+        }
+
+        function checkEasterEgg() {
+            const input = document.getElementById('secretInput').value.toLowerCase().trim();
+            const normalizedInput = input.replace(/\s+/g, ' ');
+            
+            // Verificar diferentes formas de escribir la frase
+            const acceptedPhrases = [
+                "salvox es epico",
+                "salvoxesepico",
+                "salvox  es  epico",
+                "salvox es épico",
+                "salvoxesépico",
+                "salvox es increíble"
+            ];
+            
+            if (acceptedPhrases.includes(normalizedInput) || 
+                normalizedInput.includes("salvox") && normalizedInput.includes("epico") ||
+                normalizedInput.includes("salvox") && normalizedInput.includes("épico") ||
+                normalizedInput.replace(/\s/g, '') === "salvoxesepico") {
+                
+                // Mostrar éxito
+                document.getElementById('secretForm').style.display = 'none';
+                document.getElementById('secretSuccess').style.display = 'flex';
+                
+                // Iniciar cuenta regresiva
+                let countdown = 3;
+                const countdownElement = document.getElementById('secretCountdown');
+                
+                const countdownInterval = setInterval(() => {
+                    countdown--;
+                    countdownElement.textContent = countdown;
+                    
+                    if (countdown <= 0) {
+                        clearInterval(countdownInterval);
+                        // Redirigir al easter egg
+                        window.location.href = "https://cofonitabot.onrender.com/secret";
+                    }
+                }, 1000);
+            } else {
+                // Mostrar error
+                const inputElement = document.getElementById('secretInput');
+                inputElement.style.borderColor = 'var(--danger)';
+                inputElement.style.boxShadow = '0 0 20px rgba(255, 82, 82, 0.3)';
+                
+                setTimeout(() => {
+                    inputElement.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    inputElement.style.boxShadow = 'none';
+                }, 1000);
+            }
+        }
+
+        // Easter Egg trigger oculto
+        document.getElementById('easterEggTrigger').addEventListener('click', () => {
+            showEasterEgg();
+        });
+
+        // Permitir verificación con Enter
+        document.getElementById('secretInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                checkEasterEgg();
+            }
+        });
+
+        // Ocultar easter egg si se hace clic fuera
+        document.getElementById('secretOverlay').addEventListener('click', (e) => {
+            if (e.target.id === 'secretOverlay') {
+                hideEasterEgg();
+            }
+        });
+
+        // Configuración de rutas de imágenes
+        const ASSETS_PATH = 'assets/'; // Carpeta donde se encuentran las imágenes
+        const IMAGES = {
+            logo: ASSETS_PATH + 'cofonita-logo.png',
+            quiet: ASSETS_PATH + 'quiet-profile.jpg',
+            serdemoniaco: ASSETS_PATH + 'serdemoniaco-profile.jpg',
+            notspain: ASSETS_PATH + 'notspain-profile.jpg'
+        };
+
+        // Función para cargar imágenes dinámicamente
+        function loadImages() {
+            // Cargar logo principal
+            const logoContainer = document.getElementById('logoContainer');
+            if (logoContainer) {
+                const logoImg = document.createElement('img');
+                logoImg.src = IMAGES.logo;
+                logoImg.alt = 'Cofonita Logo';
+                logoImg.onerror = function() {
+                    // Si falla la carga, mostrar ícono por defecto
+                    this.style.display = 'none';
+                    const defaultIcon = document.createElement('i');
+                    defaultIcon.className = 'fas fa-robot';
+                    logoContainer.appendChild(defaultIcon);
+                };
+                logoContainer.appendChild(logoImg);
+            }
+
+            // Cargar logo del footer
+            const footerLogo = document.getElementById('footerLogo');
+            if (footerLogo) {
+                const footerLogoImg = document.createElement('img');
+                footerLogoImg.src = IMAGES.logo;
+                footerLogoImg.alt = 'Cofonita Logo';
+                footerLogoImg.onerror = function() {
+                    // Si falla la carga, mostrar ícono por defecto
+                    this.style.display = 'none';
+                    const defaultIcon = document.createElement('i');
+                    defaultIcon.className = 'fas fa-robot';
+                    footerLogo.appendChild(defaultIcon);
+                };
+                footerLogo.appendChild(footerLogoImg);
+            }
+
+            // Cargar avatares de testimonios
+            const avatars = [
+                { id: 'quietAvatar', img: IMAGES.quiet },
+                { id: 'serdemoniacoAvatar', img: IMAGES.serdemoniaco },
+                { id: 'notspainAvatar', img: IMAGES.notspain }
+            ];
+
+            avatars.forEach(avatar => {
+                const container = document.getElementById(avatar.id);
+                if (container) {
+                    const img = document.createElement('img');
+                    img.src = avatar.img;
+                    img.alt = 'Profile Picture';
+                    img.onerror = function() {
+                        // Si falla la carga, mantener el fallback (iniciales)
+                        this.style.display = 'none';
+                    };
+                    // Insertar la imagen antes del fallback
+                    const fallback = container.querySelector('.fallback');
+                    if (fallback) {
+                        container.insertBefore(img, fallback);
+                    } else {
+                        container.appendChild(img);
+                    }
+                }
+            });
+        }
+
+        // Crear partículas
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                particle.style.left = `${Math.random() * 100}vw`;
+                particle.style.animationDelay = `${Math.random() * 20}s`;
+                particle.style.animationDuration = `${15 + Math.random() * 10}s`;
+                particle.style.opacity = Math.random() * 0.3;
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Header scroll effect
+        window.addEventListener('scroll', () => {
+            const header = document.getElementById('header');
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // Fade in animations on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('fade-in');
+                }
+            });
+        }, observerOptions);
+
+        // Observe elements
+        document.querySelectorAll('.feature-card, .step, .testimonials, .cta').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Mobile menu
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const navLinks = document.getElementById('navLinks');
+        
+        mobileMenuBtn.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+            mobileMenuBtn.innerHTML = navLinks.classList.contains('active') 
+                ? '<i class="fas fa-times"></i>' 
+                : '<i class="fas fa-bars"></i>';
+        });
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                if (targetId === '#') return;
+                
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    const headerHeight = document.getElementById('header').offsetHeight;
+                    const targetPosition = targetElement.offsetTop - headerHeight - 20;
+                    
+                    window.scrollTo({
+                        top: targetPosition,
+                        behavior: 'smooth'
+                    });
+                    
+                    // Close mobile menu if open
+                    if (window.innerWidth <= 768) {
+                        navLinks.classList.remove('active');
+                        mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+                    }
+                }
+            });
+        });
+
+        // Stats counter animation
+        function animateCounter(element, finalValue, duration = 2000) {
+            const elementEl = document.querySelector(element);
+            if (!elementEl) return;
+            
+            const startValue = 0;
+            const increment = finalValue / (duration / 16);
+            let current = startValue;
+            
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= finalValue) {
+                    elementEl.textContent = finalValue.toLocaleString();
+                    clearInterval(timer);
+                } else {
+                    elementEl.textContent = Math.floor(current).toLocaleString();
+                }
+            }, 16);
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            createParticles();
+            loadImages(); // Cargar las imágenes
+            
+            // Animate hero stats
+            setTimeout(() => {
+                animateCounter('#statServers', 1250);
+            }, 1000);
+            
+            // La página se carga normalmente, no se requiere verificación
+            console.log("Página cargada. Easter egg disponible en la esquina inferior derecha.");
+        });
+
+        // Responsive check
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                navLinks.classList.remove('active');
+                mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+            }
+        });
+
+        // Hotkey para acceder al easter egg (Shift + Alt + S)
+        document.addEventListener('keydown', (e) => {
+            if (e.shiftKey && e.altKey && e.key === 'S') {
+                showEasterEgg();
+            }
+        });
+    </script>
+</body>
+</html>
