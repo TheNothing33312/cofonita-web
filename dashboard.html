@@ -1,0 +1,1522 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control - Cofonita</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF6B8B;
+            --primary-dark: #FF4D6D;
+            --primary-light: #FF8FA3;
+            --secondary: #5A67D8;
+            --accent: #00D4AA;
+            --bg-dark: #0A0A14;
+            --bg-card: #121220;
+            --bg-card-hover: #1A1A2E;
+            --text-light: #FFFFFF;
+            --text-muted: #A0A0C0;
+            --success: #00E5A0;
+            --warning: #FFB74D;
+            --danger: #FF5252;
+            --glass: rgba(255, 255, 255, 0.05);
+            --transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            --radius-xl: 32px;
+            --shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            --shadow-hover: 0 30px 60px rgba(0, 0, 0, 0.4);
+            --glow: 0 0 20px rgba(255, 107, 139, 0.3);
+        }
+
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(90, 103, 216, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(255, 107, 139, 0.1) 0%, transparent 20%);
+        }
+
+        /* Sidebar - Glass Morphism */
+        .sidebar {
+            width: 280px;
+            min-width: 280px;
+            background: rgba(18, 18, 32, 0.8);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 40px 25px;
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .logo {
+            margin-bottom: 50px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo h1 {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 28px;
+            font-weight: 900;
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .logo-subtitle {
+            color: var(--text-muted);
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-top: 8px;
+            font-weight: 600;
+        }
+
+        /* Navigation */
+        .nav-menu {
+            list-style: none;
+            flex: 1;
+        }
+
+        .nav-item {
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 16px 20px;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid transparent;
+        }
+
+        .nav-link:hover {
+            background: var(--glass);
+            color: var(--text-light);
+            border-color: rgba(255, 255, 255, 0.1);
+            transform: translateX(10px);
+        }
+
+        .nav-link.active {
+            background: linear-gradient(135deg, rgba(255, 107, 139, 0.2) 0%, rgba(90, 103, 216, 0.2) 100%);
+            color: var(--text-light);
+            border-color: rgba(255, 107, 139, 0.3);
+            box-shadow: var(--glow);
+        }
+
+        .nav-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 60%;
+            background: linear-gradient(to bottom, var(--primary), var(--secondary));
+            border-radius: 0 4px 4px 0;
+        }
+
+        .nav-link i {
+            font-size: 20px;
+            width: 24px;
+            text-align: center;
+        }
+
+        .badge {
+            margin-left: auto;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        /* User Info */
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+            background: var(--glass);
+            border-radius: var(--radius-lg);
+            margin-top: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .user-info::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            min-width: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            transition: var(--transition);
+        }
+
+        .user-info:hover .user-avatar {
+            transform: scale(1.1);
+            border-color: var(--primary);
+        }
+
+        .user-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name {
+            font-weight: 700;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-tag {
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logout-btn:hover {
+            background: var(--danger);
+            color: white;
+            transform: rotate(90deg);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            min-height: 100vh;
+            max-width: calc(100vw - 280px);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header h2 {
+            font-size: 36px;
+            font-weight: 900;
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(135deg, var(--text-light) 0%, var(--text-muted) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        /* Welcome Card - Neomorphic */
+        .welcome-card {
+            background: linear-gradient(135deg, rgba(255, 107, 139, 0.1) 0%, rgba(90, 103, 216, 0.1) 100%);
+            padding: 40px;
+            border-radius: var(--radius-xl);
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .welcome-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 30% 20%, rgba(255, 107, 139, 0.2) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .welcome-card h3 {
+            font-size: 32px;
+            margin-bottom: 15px;
+            font-weight: 800;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .welcome-card p {
+            color: var(--text-muted);
+            margin-bottom: 25px;
+            font-size: 16px;
+            line-height: 1.6;
+            max-width: 600px;
+        }
+
+        /* Stats Grid - Card Hover Effects */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 25px;
+            margin-bottom: 50px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: var(--radius-lg);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: var(--shadow-hover);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 25px;
+            color: white;
+            font-size: 28px;
+            box-shadow: var(--glow);
+        }
+
+        .stat-value {
+            font-size: 42px;
+            font-weight: 900;
+            margin-bottom: 10px;
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(135deg, var(--text-light) 0%, var(--text-muted) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+
+        /* Servers Grid - Modern Cards */
+        .servers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .server-card {
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: var(--radius-lg);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .server-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent 30%, rgba(255, 107, 139, 0.05) 100%);
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .server-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-hover);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .server-card:hover::after {
+            opacity: 1;
+        }
+
+        .server-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 25px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .server-icon {
+            width: 70px;
+            height: 70px;
+            min-width: 70px;
+            border-radius: var(--radius-lg);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            overflow: hidden;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            transition: var(--transition);
+        }
+
+        .server-card:hover .server-icon {
+            transform: rotate(10deg) scale(1.1);
+            border-color: var(--primary);
+        }
+
+        .server-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .server-name {
+            font-weight: 800;
+            font-size: 20px;
+            margin-bottom: 8px;
+            font-family: 'Space Grotesk', sans-serif;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .server-info {
+            color: var(--text-muted);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .server-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: rgba(0, 229, 160, 0.1);
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .status-online i {
+            color: var(--success);
+        }
+
+        .status-offline {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .status-offline i {
+            color: var(--text-muted);
+        }
+
+        .server-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+
+        .no-servers {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 80px 40px;
+            background: var(--bg-card);
+            border-radius: var(--radius-xl);
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .no-servers::before {
+            content: '';
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255, 107, 139, 0.1) 0%, transparent 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .no-servers i {
+            font-size: 80px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 25px;
+            display: inline-block;
+        }
+
+        .no-servers h3 {
+            font-size: 28px;
+            margin-bottom: 15px;
+            font-weight: 800;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .no-servers p {
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            font-size: 16px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+        }
+
+        /* Buttons - Modern Gradient */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 28px;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            text-decoration: none;
+            transition: var(--transition);
+            cursor: pointer;
+            border: none;
+            outline: none;
+            font-size: 14px;
+            white-space: nowrap;
+            position: relative;
+            overflow: hidden;
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: 0.5px;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-light);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+        }
+
+        /* Section Titles */
+        .section-title {
+            font-size: 28px;
+            font-weight: 800;
+            margin: 50px 0 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-family: 'Space Grotesk', sans-serif;
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 60px;
+            height: 4px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            border-radius: 2px;
+        }
+
+        /* Loading - Modern */
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 10, 20, 0.95);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 25px;
+            backdrop-filter: blur(20px);
+        }
+
+        .loading.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid transparent;
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            border-right-color: var(--secondary);
+            animation: spin 1s linear infinite;
+            position: relative;
+        }
+
+        .loading-spinner::before {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border: 3px solid transparent;
+            border-radius: 50%;
+            border-left-color: var(--accent);
+            border-bottom-color: var(--accent);
+            animation: spinReverse 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes spinReverse {
+            to { transform: rotate(-360deg); }
+        }
+
+        .loading-text {
+            color: var(--text-light);
+            font-weight: 700;
+            font-size: 18px;
+            letter-spacing: 1px;
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--bg-card);
+            padding: 20px 25px;
+            border-radius: var(--radius-lg);
+            border-left: 5px solid var(--primary);
+            box-shadow: var(--shadow);
+            transform: translateX(100%);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1001;
+            max-width: min(350px, calc(100vw - 60px));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        /* Mobile Toggle */
+        .mobile-toggle {
+            display: none;
+            position: fixed;
+            top: 25px;
+            right: 25px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            z-index: 1002;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .mobile-toggle:hover {
+            transform: rotate(90deg);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(to bottom, var(--primary), var(--secondary));
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(to bottom, var(--primary-dark), var(--secondary));
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-content {
+                padding: 30px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                z-index: 1000;
+                background: rgba(10, 10, 20, 0.95);
+                backdrop-filter: blur(30px);
+            }
+            
+            .sidebar.active {
+                left: 0;
+            }
+            
+            .main-content {
+                max-width: 100vw;
+                margin-left: 0;
+                padding: 25px;
+            }
+            
+            .mobile-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .servers-grid {
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 20px;
+            }
+            
+            .header h2 {
+                font-size: 32px;
+            }
+            
+            .header-actions {
+                width: 100%;
+            }
+            
+            .btn {
+                flex: 1;
+                justify-content: center;
+                padding: 12px 20px;
+            }
+            
+            .servers-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .server-actions {
+                flex-direction: column;
+            }
+            
+            .server-actions .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .welcome-card {
+                padding: 30px;
+            }
+            
+            .welcome-card h3 {
+                font-size: 28px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 20px;
+            }
+            
+            .welcome-card {
+                padding: 25px;
+            }
+            
+            .welcome-card h3 {
+                font-size: 24px;
+            }
+            
+            .stat-card,
+            .server-card {
+                padding: 25px;
+            }
+            
+            .stat-value {
+                font-size: 36px;
+            }
+            
+            .server-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+            
+            .server-info {
+                justify-content: center;
+            }
+            
+            .no-servers {
+                padding: 60px 25px;
+            }
+            
+            .no-servers i {
+                font-size: 60px;
+            }
+            
+            .notification {
+                left: 20px;
+                right: 20px;
+                max-width: calc(100vw - 40px);
+                bottom: 20px;
+            }
+            
+            .section-title {
+                font-size: 24px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .btn {
+                padding: 10px 16px;
+                font-size: 13px;
+            }
+            
+            .stat-value {
+                font-size: 32px;
+            }
+            
+            .server-icon {
+                width: 60px;
+                height: 60px;
+                min-width: 60px;
+            }
+        }
+
+        /* Particle Background Effect */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--primary-light);
+            border-radius: 50%;
+            animation: floatParticle 20s infinite linear;
+        }
+
+        @keyframes floatParticle {
+            0% {
+                transform: translateY(100vh) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) translateX(100px);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Particle Background -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Mobile Toggle -->
+    <button class="mobile-toggle" id="mobileToggle">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="logo">
+            <h1>
+                <div class="logo-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                Cofonita
+            </h1>
+            <div class="logo-subtitle">PANEL DE CONTROL</div>
+        </div>
+        
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a href="#" class="nav-link active">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link">
+                    <i class="fas fa-server"></i>
+                    <span>Servidores</span>
+                    <span class="badge">5</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Analíticas</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link">
+                    <i class="fas fa-users-cog"></i>
+                    <span>Miembros</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link">
+                    <i class="fas fa-cog"></i>
+                    <span>Configuración</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link">
+                    <i class="fas fa-question-circle"></i>
+                    <span>Ayuda</span>
+                </a>
+            </li>
+        </ul>
+        
+        <div class="user-info">
+            <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar" class="user-avatar" id="userAvatar">
+            <div class="user-details">
+                <div class="user-name" id="userName">
+                    Cargando...
+                </div>
+                <div class="user-tag" id="userTag">
+                    #0000
+                </div>
+            </div>
+            <button class="logout-btn" title="Cerrar sesión" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <!-- Welcome Card -->
+        <div class="welcome-card">
+            <h3 id="welcomeTitle">¡Bienvenido!</h3>
+            <p id="welcomeSubtitle">
+                Tu panel de control está listo para gestionar tus servidores.
+            </p>
+            <button class="btn btn-secondary" id="refreshBtn">
+                <i class="fas fa-sync-alt"></i> Actualizar
+            </button>
+        </div>
+
+        <!-- Header -->
+        <header class="header">
+            <div>
+                <h2>Panel de Control</h2>
+                <div class="header-subtitle">
+                    Estado: <strong id="statusText">Conectado</strong>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary" id="refreshServersBtn">
+                    <i class="fas fa-sync-alt"></i> Actualizar Servidores
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-server"></i>
+                </div>
+                <div class="stat-value" id="statTotalServers">
+                    0
+                </div>
+                <div class="stat-label">Servidores</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-value" id="statTotalUsers">
+                    0
+                </div>
+                <div class="stat-label">Miembros Totales</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="stat-value" id="statActiveUsers">
+                    0
+                </div>
+                <div class="stat-label">Activos Hoy</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-value" id="statUptime">
+                    100%
+                </div>
+                <div class="stat-label">Disponibilidad</div>
+            </div>
+        </div>
+
+        <!-- Servers Section -->
+        <section>
+            <h3 class="section-title">
+                <i class="fas fa-server"></i>
+                Tus Servidores Administrables
+            </h3>
+            
+            <div class="servers-grid" id="serversGrid">
+                <div class="no-servers">
+                    <i class="fas fa-server fa-3x"></i>
+                    <h3>Cargando servidores...</h3>
+                    <p>Obteniendo información de tus servidores</p>
+                    <div class="loading-spinner" style="width: 30px; height: 30px;"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+        <p id="loadingText">Cargando...</p>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // Global variables
+        let currentUser = null;
+        let currentStats = null;
+
+        // DOM Elements
+        const elements = {
+            sidebar: document.getElementById('sidebar'),
+            mobileToggle: document.getElementById('mobileToggle'),
+            mainContent: document.getElementById('mainContent'),
+            userName: document.getElementById('userName'),
+            userTag: document.getElementById('userTag'),
+            userAvatar: document.getElementById('userAvatar'),
+            logoutBtn: document.getElementById('logoutBtn'),
+            refreshBtn: document.getElementById('refreshBtn'),
+            refreshServersBtn: document.getElementById('refreshServersBtn'),
+            statusText: document.getElementById('statusText'),
+            welcomeTitle: document.getElementById('welcomeTitle'),
+            welcomeSubtitle: document.getElementById('welcomeSubtitle'),
+            loading: document.getElementById('loading'),
+            loadingText: document.getElementById('loadingText'),
+            notification: document.getElementById('notification'),
+            serversGrid: document.getElementById('serversGrid')
+        };
+
+        // Create particle background
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 50;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                particle.style.left = `${Math.random() * 100}vw`;
+                particle.style.animationDelay = `${Math.random() * 20}s`;
+                particle.style.animationDuration = `${15 + Math.random() * 10}s`;
+                particle.style.opacity = Math.random() * 0.5;
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const notification = elements.notification;
+            notification.textContent = message;
+            notification.className = 'notification';
+            
+            if (type === 'success') {
+                notification.style.borderLeftColor = 'var(--success)';
+            } else if (type === 'error') {
+                notification.style.borderLeftColor = 'var(--danger)';
+            } else if (type === 'warning') {
+                notification.style.borderLeftColor = 'var(--warning)';
+            }
+            
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Show loading
+        function showLoading(text = 'Cargando...') {
+            elements.loadingText.textContent = text;
+            elements.loading.classList.add('active');
+        }
+
+        // Hide loading
+        function hideLoading() {
+            elements.loading.classList.remove('active');
+        }
+
+        // Get user data
+        async function loadUserData() {
+            try {
+                showLoading('Cargando datos del usuario...');
+                
+                const response = await fetch('http://localhost:3000/api/user', {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        currentUser = data.user;
+                        updateUserDisplay();
+                        await loadServers();
+                        showNotification('Datos cargados correctamente', 'success');
+                        return true;
+                    }
+                } else {
+                    // Redirect to login if not authenticated
+                    window.location.href = 'http://localhost:3000/login';
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                showNotification('Error cargando datos del usuario', 'error');
+                return false;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Load servers
+        async function loadServers() {
+            if (!currentUser || !currentUser.guilds) return;
+            
+            const manageableServers = currentUser.guilds.filter(g => g.manageable);
+            
+            if (manageableServers.length === 0) {
+                elements.serversGrid.innerHTML = `
+                    <div class="no-servers">
+                        <i class="fas fa-server fa-3x"></i>
+                        <h3>No tienes servidores administrables</h3>
+                        <p>Los servidores donde tengas permisos de administrador aparecerán aquí</p>
+                        <button class="btn btn-primary" onclick="loadUserData()">
+                            <i class="fas fa-sync-alt"></i> Actualizar
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            let serversHTML = '';
+            manageableServers.forEach(guild => {
+                const icon = guild.icon 
+                    ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=256`
+                    : null;
+                
+                serversHTML += `
+                <div class="server-card" data-guild-id="${guild.id}">
+                    <div class="server-header">
+                        <div class="server-icon">
+                            ${icon 
+                                ? `<img src="${icon}" alt="${guild.name}" 
+                                     onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\\'fas fa-server\\'></i>'; this.parentElement.style.background='linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)';" loading="lazy">`
+                                : `<i class="fas fa-server"></i>`}
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div class="server-name">${escapeHtml(guild.name)}</div>
+                            <div class="server-info">
+                                <span class="server-status ${guild.bot_installed ? 'status-online' : 'status-offline'}">
+                                    <i class="fas fa-circle"></i>
+                                    ${guild.bot_installed ? 'Conectado' : 'No conectado'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="server-actions">
+                        ${guild.bot_installed 
+                            ? `<button class="btn btn-primary configure-btn" data-guild-id="${guild.id}">
+                                 <i class="fas fa-cog"></i> Configurar
+                               </button>`
+                            : `<button class="btn btn-primary connect-btn" data-guild-id="${guild.id}">
+                                 <i class="fas fa-plug"></i> Conectar
+                               </button>`
+                        }
+                        <button class="btn btn-secondary view-btn" data-guild-id="${guild.id}">
+                            <i class="fas fa-eye"></i> Ver
+                        </button>
+                    </div>
+                </div>
+                `;
+            });
+            
+            elements.serversGrid.innerHTML = serversHTML;
+            
+            // Update welcome message
+            elements.welcomeTitle.textContent = `¡Bienvenido, ${currentUser.username}!`;
+            elements.welcomeSubtitle.textContent = `Tienes ${manageableServers.length} servidor${manageableServers.length !== 1 ? 'es' : ''} administrable${manageableServers.length !== 1 ? 's' : ''}.`;
+            
+            // Update stats
+            document.getElementById('statTotalServers').textContent = manageableServers.length;
+        }
+
+        // Load stats
+        async function loadStats() {
+            try {
+                const response = await fetch('http://localhost:3000/api/bot/stats', {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        currentStats = data.stats;
+                        updateStatsDisplay();
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Update user display
+        function updateUserDisplay() {
+            if (!currentUser) return;
+            
+            elements.userName.textContent = currentUser.username;
+            elements.userTag.textContent = `#${currentUser.discriminator}`;
+            elements.userAvatar.src = currentUser.avatar_url;
+        }
+
+        // Update stats display
+        function updateStatsDisplay() {
+            if (!currentStats) return;
+            
+            document.getElementById('statTotalServers').textContent = currentStats.totalServers || '0';
+            document.getElementById('statTotalUsers').textContent = currentStats.totalUsers || '0';
+            document.getElementById('statActiveUsers').textContent = currentStats.commandsUsed || '0';
+            document.getElementById('statUptime').textContent = currentStats.uptime + '%' || '100%';
+        }
+
+        // Connect to server
+        async function connectGuild(guildId) {
+            try {
+                showLoading('Conectando con el servidor...');
+                
+                const response = await fetch(`/api/guild/${guildId}/connect`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification('Redirigiendo a conexión...', 'success');
+                    setTimeout(() => {
+                        window.open(data.login_url, '_blank');
+                    }, 1000);
+                } else {
+                    showNotification(data.error || 'Error conectando servidor', 'error');
+                }
+            } catch (error) {
+                console.error('Error connecting guild:', error);
+                showNotification('Error conectando servidor', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Configure server
+        function configureGuild(guildId) {
+            showNotification(`Configurando servidor ${guildId}...`, 'info');
+            // Here would be the logic to open server configuration
+            window.open(`/server/${guildId}`, '_blank');
+        }
+
+        // View server
+        function viewGuild(guildId) {
+            showNotification(`Viendo servidor ${guildId}...`, 'info');
+            // Here would be the logic to view server details
+        }
+
+        // HTML escape function
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.toString()
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // Event Listeners
+        elements.mobileToggle.addEventListener('click', () => {
+            elements.sidebar.classList.toggle('active');
+        });
+
+        elements.logoutBtn.addEventListener('click', () => {
+            if (confirm('¿Estás seguro de cerrar sesión?')) {
+                window.location.href = 'http://localhost:3000/logout';
+            }
+        });
+
+        elements.refreshBtn.addEventListener('click', async () => {
+            showLoading('Actualizando datos...');
+            await Promise.all([loadUserData(), loadStats()]);
+            showNotification('Datos actualizados', 'success');
+        });
+
+        elements.refreshServersBtn.addEventListener('click', async () => {
+            showLoading('Actualizando servidores...');
+            await loadUserData();
+            showNotification('Servidores actualizados', 'success');
+        });
+
+        // Event delegation for server buttons
+        document.addEventListener('click', (e) => {
+            const connectBtn = e.target.closest('.connect-btn');
+            const configureBtn = e.target.closest('.configure-btn');
+            const viewBtn = e.target.closest('.view-btn');
+            
+            if (connectBtn) {
+                const guildId = connectBtn.dataset.guildId;
+                connectGuild(guildId);
+            }
+            
+            if (configureBtn) {
+                const guildId = configureBtn.dataset.guildId;
+                configureGuild(guildId);
+            }
+            
+            if (viewBtn) {
+                const guildId = viewBtn.dataset.guildId;
+                viewGuild(guildId);
+            }
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 1024 && 
+                !elements.sidebar.contains(e.target) && 
+                !elements.mobileToggle.contains(e.target)) {
+                elements.sidebar.classList.remove('active');
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 1024) {
+                elements.sidebar.classList.remove('active');
+            }
+        });
+
+        // Initialize
+        async function init() {
+            // Create particle background
+            createParticles();
+            
+            // Check if authenticated
+            const isAuthenticated = await loadUserData();
+            
+            if (isAuthenticated) {
+                await loadStats();
+                
+                // Update every 5 minutes
+                setInterval(loadStats, 5 * 60 * 1000);
+                
+                // Check connection status
+                setInterval(async () => {
+                    try {
+                        await fetch('http://localhost:3000/health', { credentials: 'include' });
+                        elements.statusText.textContent = 'Conectado';
+                        elements.statusText.style.color = 'var(--success)';
+                    } catch (error) {
+                        elements.statusText.textContent = 'Desconectado';
+                        elements.statusText.style.color = 'var(--danger)';
+                    }
+                }, 30000);
+            }
+        }
+
+        // Start when DOM is ready
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
