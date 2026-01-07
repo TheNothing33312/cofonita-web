@@ -1,0 +1,43 @@
+{
+  "name": "cofonita-auth-backend",
+  "version": "1.0.0",
+  "description": "Backend de autenticación OAuth2 para Cofonita Bot",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "test": "echo \"No tests specified\" && exit 0",
+    "setup": "npm install",
+    "generate-secret": "node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\""
+  },
+  "keywords": [
+    "discord",
+    "oauth2",
+    "authentication",
+    "cofonita",
+    "api",
+    "backend"
+  ],
+  "author": "Salvox",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "passport": "^0.6.0",
+    "passport-discord": "^0.1.4",
+    "axios": "^1.6.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "memorystore": "^1.6.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cofonita/cofonita-auth-backend.git"
+  }
+}
