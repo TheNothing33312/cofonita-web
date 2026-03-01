@@ -12,7 +12,7 @@ const app = express();
 // Configuración de producción
 const {
     PORT = 10000,
-    MAIN_SERVER_URL = 'https://cofonitabot.onrender.com',
+    MAIN_SERVER_URL = 'https://cofonita-web.onrender.com',
     FRONTEND_URL = 'https://cofonitabot.netlify.app',
     SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
     NODE_ENV = 'production'
@@ -545,3 +545,4 @@ app.listen(PORT, '0.0.0.0', () => {
 });
 
 module.exports = app;
+
