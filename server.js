@@ -24,7 +24,7 @@ const {
 
 // URLs definitivas para producción
 const FINAL_WEBSITE_URL = 'https://cofonitabot.netlify.app';
-const FINAL_API_URL = 'https://cofonitabot.onrender.com';
+const FINAL_API_URL = 'https://cofonita-web.onrender.com';
 const FINAL_REDIRECT_URL = `${FINAL_API_URL}/auth/discord/callback`;
 
 // DEBUG: Mostrar variables cargadas
@@ -602,5 +602,6 @@ app.listen(serverPort, '0.0.0.0', () => {
     console.log(`   • Iniciar sesión: ${FINAL_WEBSITE_URL}/login`);
     console.log('='.repeat(60) + '\n');
 });
+
 
 module.exports = app;
